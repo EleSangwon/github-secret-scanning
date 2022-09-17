@@ -1,0 +1,7 @@
+exclude: # exclude matching issues
+  - message: exclude rules.yml
+    paths:
+      - rules.yml
+  - message: exclude test
+    paths:
+      - tests/**
