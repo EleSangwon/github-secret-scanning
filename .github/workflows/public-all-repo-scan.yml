@@ -1,0 +1,74 @@
+name: all github repository secret scanning
+on: [ push, pull_request ]
+jobs:
+  public-repo-list:
+    runs-on: ubuntu-22.04
+    outputs:
+      repo: ${{ steps.public.outputs.matrix }}
+    steps:
+    - name : fetch actions repo(default)
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+        ref: temp
+    - id: public
+      run: |
+        repo=`cat public-repo-list.json`
+        echo "::set-output name=matrix::$(echo $repo)"
+
+  scanning:
+    needs: [ public-repo-list ]
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{fromJson(needs.public-repo-list.outputs.repo)}}
+    steps:
+    - name : fetch actions repo(default)
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+        ref: temp
+    - name: fetch actions repo(target)
+      uses: actions/checkout@v3
+      with:
+        repository: EleSangwon/${{ matrix.repo.name }}
+        path: "./project"
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+    - name: install trufflehog3
+      run: |
+        pip install trufflehog3
+    - name: install jq
+      run: |
+        curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -o /usr/local/bin/jq
+        chmod a+x /usr/local/bin/jq
+        jq -V
+    - name: scanning secrets
+      run: |
+        cd ${GITHUB_WORKSPACE}/project
+        trufflehog3 -z -r ${GITHUB_WORKSPACE}/rules.yml --no-entropy
+    - name: create report.json
+      id: report
+      run: |
+        trufflehog3 -z -r ${GITHUB_WORKSPACE}/rules.yml --context 100 --no-entropy --format json --output ${{ matrix.repo.name }}.json
+        length=`cat ${{ matrix.repo.name }}.json | jq 'length'`
+        echo "::set-output name=check::$(echo false)"
+        
+        if [[ $length -gt 0 ]]; then
+          echo "Create report & json file for ${{ matrix.repo.name }}"
+          echo "::set-output name=check::$(echo true)"
+          trufflehog3 -R ${GITHUB_WORKSPACE}/${{ matrix.repo.name }}.json --output ${{ matrix.repo.name }}.html
+        fi
+    - name: check
+      run: |
+        echo ${{ steps.report.outputs.check }}
+    - name: upload report
+      if: steps.report.outputs.check == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: secret-scanning-artifact
+        path: |
+          ${{ matrix.repo.name }}.html
+          ${{ matrix.repo.name }}.json
