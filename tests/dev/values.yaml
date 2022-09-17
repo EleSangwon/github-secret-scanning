@@ -1,0 +1,7 @@
+vault:
+  role: dev-vault-role
+
+secret_key:
+  private_key: "-----BEGIN PRIVATE KEY-----"
+  aws_access_key: AKIAXYZDQCEN4B6JSJQI
+  apiKey:

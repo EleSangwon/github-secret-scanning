@@ -1,0 +1,7 @@
+config:
+  value: |
+    PORT=3000
+    MIN_DB_CONNECTIONS=1
+    MAX_DB_CONNECTIONS=100
+    AWS_ACCESS_KEY=AKIAXYZAABCDDQCEEFGH
+    SLACK=https://hooks.slack.com/services/TABCD012R/B1234ABCDEF/abcdED1F0x1AOaBCaBCDefgh
