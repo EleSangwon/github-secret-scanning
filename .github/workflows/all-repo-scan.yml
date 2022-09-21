@@ -52,6 +52,7 @@ jobs:
     - name: create report.json
       id: report
       run: |
+        cd ${GITHUB_WORKSPACE}/project
         trufflehog3 -z -r ${GITHUB_WORKSPACE}/rules.yml --context 100 --no-entropy --format json --output ${{ matrix.repo.name }}.json
         length=`cat ${{ matrix.repo.name }}.json | jq 'length'`
         echo "::set-output name=check::$(echo false)"
@@ -59,7 +60,7 @@ jobs:
         if [[ $length -gt 0 ]]; then
           echo "Create report & json file for ${{ matrix.repo.name }}"
           echo "::set-output name=check::$(echo true)"
-          trufflehog3 -R ${GITHUB_WORKSPACE}/${{ matrix.repo.name }}.json --output ${{ matrix.repo.name }}.html
+          trufflehog3 -R ${GITHUB_WORKSPACE}/project/${{ matrix.repo.name }}.json --output ${{ matrix.repo.name }}.html
         fi
     - name: check
       run: |
@@ -70,5 +71,5 @@ jobs:
       with:
         name: secret-scanning-artifact
         path: |
-          ${{ matrix.repo.name }}.html
-          ${{ matrix.repo.name }}.json
+          project/${{ matrix.repo.name }}.html
+          project/${{ matrix.repo.name }}.json
