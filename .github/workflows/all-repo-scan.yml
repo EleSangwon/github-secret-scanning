@@ -1,7 +1,7 @@
 name: all github repository secret scanning
 on: [ push, pull_request ]
 jobs:
-  public-repo-list:
+  repo-list:
     runs-on: ubuntu-22.04
     outputs:
       repo: ${{ steps.public.outputs.matrix }}
@@ -17,12 +17,12 @@ jobs:
         echo "::set-output name=matrix::$(echo $repo)"
 
   scanning:
-    needs: [ public-repo-list ]
+    needs: [ repo-list ]
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        repo: ${{fromJson(needs.public-repo-list.outputs.repo)}}
+        repo: ${{fromJson(needs.repo-list.outputs.repo)}}
     steps:
     - name : fetch actions repo(default)
       uses: actions/checkout@v3
@@ -55,7 +55,7 @@ jobs:
         trufflehog3 -z -r ${GITHUB_WORKSPACE}/rules.yml --context 100 --no-entropy --format json --output ${{ matrix.repo.name }}.json
         length=`cat ${{ matrix.repo.name }}.json | jq 'length'`
         echo "::set-output name=check::$(echo false)"
-        
+
         if [[ $length -gt 0 ]]; then
           echo "Create report & json file for ${{ matrix.repo.name }}"
           echo "::set-output name=check::$(echo true)"
